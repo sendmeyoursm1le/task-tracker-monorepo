@@ -1,7 +1,7 @@
 @startuml
 !theme plain
 
-title Task Tracker ВУЗа — диаграмма вариантов использования
+title Task Tracker — диаграмма вариантов использования
 left to right direction
 
 skinparam shadowing false
@@ -12,13 +12,10 @@ skinparam usecase {
   ArrowColor #455A64
 }
 
-actor "Пользователь ВУЗа" as User
-actor "Преподаватель" as Teacher
-actor "Студент" as Student
+actor "Пользователь" as User
 actor "Администратор" as Admin
 
-User <|-- Teacher
-User <|-- Student
+User <|-- Admin
 
 rectangle "Task Tracker" {
   package "Сервис пользователей\nuser_service :8081" #E8F8F5 {
@@ -38,25 +35,22 @@ rectangle "Task Tracker" {
     usecase "Комментарии и вложения" as FUT_Comments #FFF2B2
     usecase "Дедлайны и приоритеты" as FUT_Deadlines #FFF2B2
     usecase "Уведомления" as FUT_Notifications #FFF2B2
-    usecase "Аналитика успеваемости\nи нагрузки" as FUT_Analytics #FFF2B2
+    usecase "Аналитика задач\nи продуктивности" as FUT_Analytics #FFF2B2
   }
 }
 
 Admin --> UC_CreateUser
 User --> UC_GetUser
-Teacher --> UC_CreateTask
-Teacher --> UC_GetTasks
-Student --> UC_GetTasks
-Teacher --> UC_Delegate
+User --> UC_CreateTask
+User --> UC_GetTasks
+User --> UC_Delegate
 
 UC_Delegate ..> UC_CheckAssignee : <<include>>
 
 User --> FUT_Auth
-Teacher --> FUT_Comments
-Student --> FUT_Comments
-Teacher --> FUT_Deadlines
-Student --> FUT_Notifications
-Teacher --> FUT_Notifications
+User --> FUT_Comments
+User --> FUT_Deadlines
+User --> FUT_Notifications
 Admin --> FUT_Analytics
 
 legend right

@@ -1,7 +1,7 @@
 @startuml
 !theme plain
 
-title Task Tracker ВУЗа — изолированные схемы баз данных
+title Task Tracker — изолированные схемы баз данных
 left to right direction
 
 skinparam shadowing false
