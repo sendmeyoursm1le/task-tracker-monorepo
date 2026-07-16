@@ -1,10 +1,10 @@
 # Task Tracker Documentation
 
-В этой папке будут храниться PlantUML-диаграммы и промпты для первой недели практики.
+Документация первой недели практики подготовлена в подходе Docs-as-Code.
 
-Планируемые файлы:
+- `use-case-diagram.puml` — варианты использования и функции дальнейшего масштабирования.
+- `delegate-task-sequence.puml` — процесс делегирования задачи и HTTP-взаимодействие микросервисов.
+- `er-diagram.puml` — изолированные схемы баз данных `user_service` и `task_service`.
+- `PROMPTS.md` — промпты, использованные для генерации диаграмм.
 
-- use-case-diagram.puml
-- delegate-task-sequence.puml
-- er-diagram.puml
-- PROMPTS.md
+Файлы `.puml` можно просматривать с помощью расширения PlantUML для VS Code.

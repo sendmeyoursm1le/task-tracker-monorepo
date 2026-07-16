@@ -1,0 +1,61 @@
+@startuml
+!theme plain
+
+title Task Tracker ВУЗа — изолированные схемы баз данных
+left to right direction
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam entity {
+  BackgroundColor #FFFFFF
+  BorderColor #455A64
+  ArrowColor #607D8B
+}
+
+package "user_service — отдельная БД\nuser_service_db" #E8F8F5 {
+  entity "users" as users {
+    * id : BIGINT <<PK>>
+    --
+    * first_name : VARCHAR(100) <<NOT NULL>>
+    * last_name : VARCHAR(100) <<NOT NULL>>
+    * email : VARCHAR(255) <<NOT NULL, UNIQUE>>
+  }
+}
+
+package "task_service — отдельная БД\ntask_service_db" #EBF5FB {
+  entity "tasks" as tasks {
+    * id : BIGINT <<PK>>
+    --
+    * title : VARCHAR(255) <<NOT NULL>>
+    * status : VARCHAR(20) <<NOT NULL>>
+    * creator_id : BIGINT <<NOT NULL>>
+    assignee_id : BIGINT <<NULL>>
+  }
+
+  enum "task_status" as task_status {
+    TODO
+    IN_PROGRESS
+    DONE
+  }
+
+  tasks ..> task_status : status принимает значение
+}
+
+note bottom of users
+  Таблица доступна только user_service.
+end note
+
+note bottom of tasks
+  creator_id и assignee_id — логические ссылки
+  на пользователей, но не внешние ключи.
+  Проверка пользователя выполняется по HTTP.
+end note
+
+users -[hidden]-> tasks
+
+legend bottom
+  Базы данных физически/логически изолированы.
+  Между users и tasks нет JOIN, FK и прямого доступа.
+endlegend
+
+@enduml
