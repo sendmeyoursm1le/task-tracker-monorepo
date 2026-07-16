@@ -1,0 +1,62 @@
+@startuml
+!theme plain
+
+title Task Tracker — диаграмма вариантов использования
+left to right direction
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #EAF2F8
+  BorderColor #2E5D7B
+  ArrowColor #455A64
+}
+
+actor "Пользователь" as User
+actor "Администратор" as Admin
+
+User <|-- Admin
+
+rectangle "Task Tracker" {
+  package "Сервис пользователей\nuser_service :8081" #E8F8F5 {
+    usecase "Создать\nпользователя" as UC_CreateUser
+    usecase "Получить пользователя\nпо ID" as UC_GetUser
+  }
+
+  package "Сервис задач\ntask_service :8082" #EBF5FB {
+    usecase "Создать задачу" as UC_CreateTask
+    usecase "Получить задачи\nпользователя" as UC_GetTasks
+    usecase "Делегировать задачу" as UC_Delegate
+    usecase "Проверить существование\nисполнителя" as UC_CheckAssignee
+  }
+
+  package "Возможности развития pet-project" #FFF4CC {
+    usecase "Авторизация и роли" as FUT_Auth #FFF2B2
+    usecase "Комментарии и вложения" as FUT_Comments #FFF2B2
+    usecase "Дедлайны и приоритеты" as FUT_Deadlines #FFF2B2
+    usecase "Уведомления" as FUT_Notifications #FFF2B2
+    usecase "Аналитика задач\nи продуктивности" as FUT_Analytics #FFF2B2
+  }
+}
+
+Admin --> UC_CreateUser
+User --> UC_GetUser
+User --> UC_CreateTask
+User --> UC_GetTasks
+User --> UC_Delegate
+
+UC_Delegate ..> UC_CheckAssignee : <<include>>
+
+User --> FUT_Auth
+User --> FUT_Comments
+User --> FUT_Deadlines
+User --> FUT_Notifications
+Admin --> FUT_Analytics
+
+legend right
+  |= Цвет |= Назначение |
+  | <#EAF2F8> голубой | Функции обязательного уровня |
+  | <#FFF2B2> жёлтый | Возможности дальнейшего масштабирования |
+endlegend
+
+@enduml

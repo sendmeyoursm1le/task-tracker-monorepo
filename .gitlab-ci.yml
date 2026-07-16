@@ -1,0 +1,36 @@
+# Используем официальный образ Maven с Java 17
+image: maven:3.9.5-eclipse-temurin-17
+
+# Определяем этапы пайплайна
+stages:
+  - verify
+
+# Настройка кэширования зависимостей Maven для ускорения работы раннеров
+cache:
+  paths:
+    - .m2/repository
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+
+# Проверка микросервиса пользователей
+verify_user_service:
+  stage: verify
+  script:
+    - cd user_service
+    - mvn clean verify
+  # Пайплайн запустится только если были изменения в папке user_service
+  only:
+    changes:
+      - user_service/**/*
+
+# Проверка микросервиса задач
+verify_task_service:
+  stage: verify
+  script:
+    - cd task_service
+    - mvn clean verify
+  # Пайплайн запустится только если были изменения в папке task_service
+  only:
+    changes:
+      - task_service/**/*

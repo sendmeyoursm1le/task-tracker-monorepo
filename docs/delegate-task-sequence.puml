@@ -1,0 +1,77 @@
+@startuml
+!theme plain
+
+title Делегирование задачи — взаимодействие task_service и user_service
+autonumber
+hide footbox
+
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #37474F
+  LifeLineBorderColor #607D8B
+  ParticipantBorderColor #455A64
+  ParticipantBackgroundColor #EAF2F8
+  ActorBorderColor #455A64
+  ActorBackgroundColor #FFF8E1
+  GroupBorderColor #78909C
+  GroupBackgroundColor #FAFAFA
+}
+
+actor "Клиент" as Client
+participant "TaskController" as TC
+participant "TaskService" as TS
+database "Task DB" as TDB
+participant "User Service Client\n(RestClient / RestTemplate)" as HTTP
+participant "UserController" as UC
+participant "UserService" as US
+database "User DB" as UDB
+
+Client -> TC : POST /tasks/{taskId}/delegate?assigneeId=X
+TC -> TS : delegate(taskId, assigneeId)
+
+alt assigneeId отсутствует или меньше 1
+  TS --> TC : ошибка валидации
+  TC --> Client : 400 Bad Request
+else корректный assigneeId
+  TS -> TDB : найти задачу по taskId
+  TDB --> TS : задача или пустой результат
+
+  alt задача не найдена
+    TS --> TC : TaskNotFoundException
+    TC --> Client : 404 Not Found\nTASK_NOT_FOUND
+  else задача найдена
+    note over HTTP,UC
+      Сетевое взаимодействие между микросервисами по HTTP.
+      task_service не обращается к User DB напрямую.
+    end note
+
+    TS -> HTTP : проверить пользователя assigneeId
+    HTTP -[#1565C0]> UC : GET http://user_service:8081/users/{assigneeId}
+    UC -> US : getById(assigneeId)
+    US -> UDB : найти пользователя по ID
+    UDB --> US : результат поиска
+
+    alt пользователь существует
+      US --> UC : UserResponse
+      UC -[#1565C0]-> HTTP : 200 OK + пользователь
+      HTTP --> TS : пользователь подтверждён
+      TS -> TDB : обновить task.assigneeId
+      TDB --> TS : сохранённая задача
+      TS --> TC : TaskResponse
+      TC --> Client : 200 OK + обновлённая задача
+    else пользователь не найден
+      US --> UC : UserNotFoundException
+      UC -[#C62828]-> HTTP : 404 Not Found
+      HTTP --> TS : исполнитель не существует
+      TS --> TC : AssigneeNotFoundException
+      TC --> Client : 404 Not Found\nASSIGNEE_NOT_FOUND
+    else user_service вернул 5xx или не ответил
+      UC -[#C62828]-> HTTP : 5xx / timeout
+      HTTP --> TS : ошибка удалённого сервиса
+      TS --> TC : UserServiceUnavailableException
+      TC --> Client : 503 Service Unavailable\nUSER_SERVICE_UNAVAILABLE
+    end
+  end
+end
+
+@enduml
