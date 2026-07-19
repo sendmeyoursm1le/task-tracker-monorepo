@@ -20,9 +20,11 @@ verify_user_service:
     - cd user_service
     - mvn clean verify
   # Пайплайн запустится только если были изменения в папке user_service
-  only:
-    changes:
-      - user_service/**/*
+  rules:
+    - changes:
+        compare_to: "refs/heads/main"
+        paths:
+          - user_service/**/*
 
 # Проверка микросервиса задач
 verify_task_service:
@@ -31,6 +33,8 @@ verify_task_service:
     - cd task_service
     - mvn clean verify
   # Пайплайн запустится только если были изменения в папке task_service
-  only:
-    changes:
-      - task_service/**/*
+  rules:
+    - changes:
+        compare_to: "refs/heads/main"
+        paths:
+          - task_service/**/*
