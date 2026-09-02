@@ -1,60 +1,80 @@
-# Промпты для проектирования Task Tracker
+# Prompts
 
-Ниже сохранены отдельные запросы, использованные вместе с `plantuml-skill` для подготовки аналитики первой недели. Диаграммы описывают backend распределённой системы управления задачами из двух независимых микросервисов: `user_service` и `task_service`.
+1)
+Создай Use Case Diagram в PlantUML для проекта Task Tracker.
+Архитектура состоит из двух независимых микросервисов:
+User Service и Task Service.
 
-## 1. Use Case Diagram
+Актор один:
+User.
 
-```text
-Используй plantuml-skill и создай Use Case Diagram в формате PlantUML для распределённой системы управления задачами Task Tracker.
+Основные функции:
+Создать пользователя.
+Получить пользователя по ID.
+Создать задачу.
+Получить список задач пользователя.
+Делегировать задачу другому пользователю.
 
-Система состоит из двух микросервисов:
-- user_service на порту 8081: создание пользователя и получение пользователя по ID;
-- task_service на порту 8082: создание задачи, получение списка задач пользователя и делегирование задачи.
+Раздели функции по package микросервисов.
+Будущие возможности выдели светло-серым цветом через stereotype future:
+Authorization, Roles, Comments, Attachments, Deadlines, Notifications, Task priority.
+Используй left to right direction, добавь title.
+Верни только PlantUML.
 
-Покажи акторов «Пользователь» и «Администратор». Администратор должен быть специализацией общего пользователя. Свяжи обязательные функции с подходящими акторами: администратор создаёт пользователей, а пользователь получает пользователя по ID, создаёт и просматривает задачи и делегирует задачу. Для делегирования добавь включаемый вариант использования «Проверить существование исполнителя».
+2)
+Создай Sequence Diagram в PlantUML для делегирования задачи.
 
-Добавь отдельный блок возможностей будущего масштабирования pet-project: авторизация и роли, комментарии и вложения, дедлайны и приоритеты, уведомления, аналитика задач и продуктивности. Обязательно выдели будущие функции отдельным жёлтым цветом и добавь легенду, чтобы их можно было отличить от обязательного функционала.
+Участники:
+Client
+Task Service
+User Service
+Task Database
+User Database
 
-Диаграмма должна быть читаемой, с русскими пользовательскими подписями и техническими именами сервисов. Сохрани результат в docs/use-case-diagram.puml.
-```
+Основной запрос:
+POST /tasks/{taskId}/delegate?assigneeId=X
 
-## 2. Sequence Diagram делегирования задачи
+Task Service должен сначала найти задачу в своей базе.
+После этого он проверяет пользователя HTTP-запросом:
+GET /users/{assigneeId}
+в User Service.
 
-```text
-Используй plantuml-skill и создай подробную Sequence Diagram бизнес-процесса делегирования задачи в Task Tracker.
+Покажи alt/else для сценариев:
+1. assigneeId некорректный - 400 Bad Request.
+2. Задача не найдена - 404 Not Found.
+3. Пользователь найден - Task Service обновляет assigneeId и возвращает 200 OK.
+4. Пользователь не найден - 404 Not Found.
+5. User Service недоступен или вернул 5xx - 503 Service Unavailable.
 
-Основной запрос клиента: POST /tasks/{taskId}/delegate?assigneeId=X в task_service. Покажи участников Client, TaskController, TaskService, Task DB, HTTP-клиент на RestClient или RestTemplate, UserController, UserService и User DB.
+Важно: Task Service не обращается напрямую к User Database.
+Используй activation/deactivation, добавь title.
+Верни только PlantUML.
 
-Главное архитектурное ограничение: task_service не имеет права обращаться к User DB напрямую. На диаграмме должен быть явно выделен сетевой HTTP-запрос GET http://user_service:8081/users/{assigneeId} из task_service в user_service.
+3)
+Создай ER Diagram в PlantUML для Task Tracker.
+Покажи две независимые базы данных:
 
-Используй блоки alt/else и покажи успешный ответ 200 OK с сохранением assigneeId, а также не менее трёх ошибочных сценариев:
-1. assigneeId отсутствует или некорректен — 400 Bad Request;
-2. задача не найдена — 404 Not Found;
-3. пользователь-исполнитель не найден — 404 Not Found;
-4. user_service недоступен, вернул 5xx или timeout — 503 Service Unavailable.
+User Service Database:
+User
+id BIGINT PK
+first_name VARCHAR(100)
+last_name VARCHAR(100)
+email VARCHAR(255) UNIQUE
 
-Добавь номера сообщений и понятные названия доменных ошибок. Сохрани результат в docs/delegate-task-sequence.puml.
-```
+Task Service Database:
+Task
+id BIGINT PK
+title VARCHAR(255)
+status ENUM
+creator_id BIGINT
+assignee_id BIGINT
 
-## 3. ER-диаграмма
+ENUM status:
+TODO
+IN_PROGRESS
+DONE
 
-```text
-Используй plantuml-skill и создай ER-диаграмму баз данных двух независимых микросервисов Task Tracker.
-
-Покажи две визуально разделённые схемы:
-
-1. user_service_db, таблица users:
-- id BIGINT, первичный ключ;
-- first_name VARCHAR(100), обязательное поле;
-- last_name VARCHAR(100), обязательное поле;
-- email VARCHAR(255), обязательное уникальное поле.
-
-2. task_service_db, таблица tasks:
-- id BIGINT, первичный ключ;
-- title VARCHAR(255), обязательное поле;
-- status VARCHAR(20), обязательное поле со значениями TODO, IN_PROGRESS, DONE;
-- creator_id BIGINT, обязательное поле;
-- assignee_id BIGINT, необязательное поле.
-
-Подчеркни, что creator_id и assignee_id являются только логическими идентификаторами пользователей, а не внешними ключами на users. Между базами не должно быть связи FK, JOIN или прямого доступа. Укажи, что существование пользователя проверяется сетевым HTTP-запросом в user_service. Сохрани результат в docs/er-diagram.puml.
-```
+creator_id и assignee_id являются только идентификаторами пользователей.
+Никаких foreign key между Task и User быть не должно.
+Добавь title.
+Верни только PlantUML.

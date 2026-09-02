@@ -3,6 +3,9 @@ package com.tasktracker.taskservice.error;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.tasktracker.taskservice.task.AssigneeNotFoundException;
+import com.tasktracker.taskservice.task.TaskNotFoundException;
+import com.tasktracker.taskservice.task.UserServiceUnavailableException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +37,21 @@ public class GlobalExceptionHandler {
         );
 
         return buildError(HttpStatus.BAD_REQUEST, "Request validation failed", fieldErrors);
+    }
+
+    @ExceptionHandler(TaskNotFoundException.class)
+    public ResponseEntity<ApiError> handleTaskNotFound(TaskNotFoundException exception) {
+        return buildError(HttpStatus.NOT_FOUND, exception.getMessage(), Map.of());
+    }
+
+    @ExceptionHandler(AssigneeNotFoundException.class)
+    public ResponseEntity<ApiError> handleAssigneeNotFound(AssigneeNotFoundException exception) {
+        return buildError(HttpStatus.NOT_FOUND, exception.getMessage(), Map.of());
+    }
+
+    @ExceptionHandler(UserServiceUnavailableException.class)
+    public ResponseEntity<ApiError> handleUserServiceUnavailable(UserServiceUnavailableException exception) {
+        return buildError(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), Map.of());
     }
 
     private ResponseEntity<ApiError> buildError(
