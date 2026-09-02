@@ -67,6 +67,49 @@ class TaskControllerTest {
     }
 
     @Test
+    void delegateReturnsUpdatedTask() throws Exception {
+        TaskResponse response = new TaskResponse(1L, "Prepare report", TaskStatus.TODO, 10L, 20L);
+        when(taskService.delegate(1L, 20L)).thenReturn(response);
+
+        mockMvc.perform(post("/tasks/1/delegate").param("assigneeId", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.title").value("Prepare report"))
+                .andExpect(jsonPath("$.assigneeId").value(20));
+    }
+
+    @Test
+    void delegateReturnsNotFoundWhenTaskDoesNotExist() throws Exception {
+        when(taskService.delegate(99L, 20L)).thenThrow(new TaskNotFoundException(99L));
+
+        mockMvc.perform(post("/tasks/99/delegate").param("assigneeId", "20"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Task with id 99 was not found"));
+    }
+
+    @Test
+    void delegateReturnsNotFoundWhenAssigneeDoesNotExist() throws Exception {
+        when(taskService.delegate(1L, 404L)).thenThrow(new AssigneeNotFoundException(404L));
+
+        mockMvc.perform(post("/tasks/1/delegate").param("assigneeId", "404"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Assignee with id 404 was not found"));
+    }
+
+    @Test
+    void delegateReturnsServiceUnavailableWhenUserServiceFails() throws Exception {
+        when(taskService.delegate(1L, 20L)).thenThrow(new UserServiceUnavailableException(20L));
+
+        mockMvc.perform(post("/tasks/1/delegate").param("assigneeId", "20"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.status").value(503))
+                .andExpect(jsonPath("$.message")
+                        .value("User service is unavailable while checking assignee with id 20"));
+    }
+
+    @Test
     void createReturnsBadRequestForInvalidInput() throws Exception {
         mockMvc.perform(post("/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -87,6 +130,14 @@ class TaskControllerTest {
     @Test
     void getByUserIdReturnsBadRequestForNonPositiveId() throws Exception {
         mockMvc.perform(get("/tasks").param("userId", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Request validation failed"));
+    }
+
+    @Test
+    void delegateReturnsBadRequestForNonPositiveAssigneeId() throws Exception {
+        mockMvc.perform(post("/tasks/1/delegate").param("assigneeId", "0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("Request validation failed"));

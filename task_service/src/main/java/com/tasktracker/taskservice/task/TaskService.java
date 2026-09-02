@@ -9,9 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final UserServiceClient userServiceClient;
 
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, UserServiceClient userServiceClient) {
         this.taskRepository = taskRepository;
+        this.userServiceClient = userServiceClient;
     }
 
     @Transactional
@@ -32,5 +34,16 @@ public class TaskService {
                 .stream()
                 .map(TaskResponse::from)
                 .toList();
+    }
+
+    @Transactional
+    public TaskResponse delegate(Long taskId, Long assigneeId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
+
+        userServiceClient.verifyUserExists(assigneeId);
+        task.delegateTo(assigneeId);
+
+        return TaskResponse.from(task);
     }
 }

@@ -59,4 +59,8 @@ public class Task {
     public Long getAssigneeId() {
         return assigneeId;
     }
+
+    public void delegateTo(Long assigneeId) {
+        this.assigneeId = assigneeId;
+    }
 }
